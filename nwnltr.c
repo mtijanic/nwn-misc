@@ -142,7 +142,7 @@ void build_ltr(const char *filename, struct ltrfile *ltr) {
                 continue;
             }
         }
-        if ((q - buf < 2) continue; // least 3 characters in name
+        if ((q - buf) < 2) continue; // least 3 characters in name
 
         p = buf; q--; count++;
 
