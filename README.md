@@ -9,6 +9,12 @@ A tool for displaying and generating LTR files - used for the game random name g
  - Print .ltr file Markov chain tables in a human readable format
  - Build a new .ltr file from a set of names
 
+## nwserver-dump-decode
+
+A tool to decode crash logs (.log) or similar stack traces from nwserver (windows or linux).
+
+Can be fed either a nwserver-crash-xxxxxxxxx.log file, or raw offsets. Uses NWNX API Functions{Linux,Windows}.hpp to decode the offsets.
+
 ## NWNX Server setup
 
 Instructions on how to setup a NWNX server and a collection of useful scripts to run/maintain it:
