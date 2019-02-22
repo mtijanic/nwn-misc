@@ -26,7 +26,7 @@ git clone https://github.com/nwnxee/unified.git nwnx
 # Make a directory where the build system will initialize
 mkdir nwnx/build && cd nwnx/build
 # Initialize the build system to use GCC version 7, for 32bit. Build release version of nwnx, with debug info
-cmake "CC=gcc-7 -m32 CXX=g++-7 -m32" -DCMAKE_BUILD_TYPE=RelWithDebInfo ../
+CC="gcc-7 -m32" CXX="g++-7 -m32" cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo ../
 # Build NWNX, in 6 threads. This will take a while
 make -j6
 
