@@ -72,7 +72,7 @@ echo "Starting $MODNAME. Log is $LOGFILE"
 export NWNX_CORE_LOAD_PATH=~/nwnx/Binaries
 LD_PRELOAD=~/nwnx/Binaries/NWNX_Core.so \
  ./nwserver-linux \
-  -module '$MODNAME' \
+  -module $MODNAME \
   -maxclients 96 \
   -minlevel 1 \
   -maxlevel 20 \
