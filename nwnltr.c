@@ -102,8 +102,8 @@ struct ltrfile {
 
 static float nrand() { return (float)rand() / RAND_MAX; }
 static int idx(char letter) {
-    if (letter == '\'') return 27;
-    if (letter == '-')  return 28;
+    if (letter == '\'') return 26;
+    if (letter == '-')  return 27;
     if (letter >= 'a' && letter <= 'z') return letter - 'a';
     return -1;
 }
@@ -134,15 +134,17 @@ void build_ltr(const char *filename, struct ltrfile *ltr) {
     char *p, *q;
     int count = 0;
     int midcount = 0;
-    while (scanf("%s", buf) == 1) {
+    while (scanf("%255s", buf) == 1) {
         for (q = buf; *q; q++) {
+            if (((*q) == 0x0d) || ((*q) == 0x0a)) // stop on CR, LF
+                break;
             *q = tolower(*q);
             if (idx(*q) == -1) {
                 fprintf(stderr, "Invalid character %c in name %s. Skipping\n", *q, buf);
                 continue;
             }
         }
-        if ((q - buf) < 2) continue; // least 3 characters in name
+        if ((q - buf) < 3) continue; // least 3 characters in name
 
         p = buf; q--; count++;
 
