@@ -330,7 +330,7 @@ again:
         }
 
         if (i == ltr->header.num_letters) {
-            if (--p - namebuf < 2 || ++attempts > 100)
+            if (--p - namebuf < 3 || ++attempts > 100)
                 goto again;
         }
     }
