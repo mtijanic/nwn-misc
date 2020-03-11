@@ -46,6 +46,7 @@ struct cfg {
 #define die(format, ...)                                \
     do {                                                \
         fprintf(stderr, format "\n", ##__VA_ARGS__);    \
+        fflush(stderr);                                 \
         exit(~0);                                       \
     } while(0)
 
@@ -141,6 +142,7 @@ void build_ltr(const char *filename, struct ltrfile *ltr) {
             *q = tolower(*q);
             if (idx(*q) == -1) {
                 fprintf(stderr, "Invalid character %c in name %s. Skipping\n", *q, buf);
+                fflush(stderr);
                 continue;
             }
         }
