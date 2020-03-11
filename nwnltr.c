@@ -138,7 +138,7 @@ void build_ltr(const char *filename, struct ltrfile *ltr) {
     int midcount = 0;
     while (scanf("%255s", buf) == 1) {
         for (q = buf; *q; q++) {
-            if (((*q) == 0x0d) || ((*q) == 0x0a)) // stop on CR, LF
+            if (((*q) == 0x0d) || ((*q) == 0x0a) || ((*q) == '#')) // stop on CR, LF, or #
                 break;
             *q = tolower(*q);
             if (idx(*q) == -1) {
