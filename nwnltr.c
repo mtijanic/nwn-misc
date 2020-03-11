@@ -81,20 +81,21 @@ void parse_cmdline(int argc, char *argv[]) {
 // Files can have fewer (just alpha), but there is no point as the special ones
 // can just be given a probability of 0 to achieve the same effect.
 // Thus, 28 is hardcoded here, for ease of file IO.
+#define MAX_LETTERS 28
 static const char letters[] = "abcdefghijklmnopqrstuvwxyz'-";
 struct ltr_header {
     char     magic[8];
     uint8_t  num_letters;
 };
-struct cdf28 {
-    float start  [28];
-    float middle [28];
-    float end    [28];
+struct cdf {
+    float start  [MAX_LETTERS];
+    float middle [MAX_LETTERS];
+    float end    [MAX_LETTERS];
 };
 struct ltrdata {
-    struct cdf28 singles;
-    struct cdf28 doubles[28];
-    struct cdf28 triples[28][28];
+    struct cdf singles;
+    struct cdf doubles[MAX_LETTERS];
+    struct cdf triples[MAX_LETTERS][MAX_LETTERS];
 };
 struct ltrfile {
     struct ltr_header header;
@@ -117,8 +118,8 @@ void load_ltr(const char *filename, struct ltrfile *ltr) {
     if (fread(&ltr->header, 9, 1, f) != 1 || strncmp(ltr->header.magic, "LTR V1.0", 8))
         die("File %s has no valid LTR header", filename);
 
-    if (ltr->header.num_letters != 28)
-        die("File built for %d letters, tool only supports 28.", ltr->header.num_letters);
+    if (ltr->header.num_letters != MAX_LETTERS)
+        die("File built for %d letters, tool only supports %d.", ltr->header.num_letters, MAX_LETTERS);
 
     if (fread(&ltr->data, sizeof(ltr->data), 1, f) != 1)
         die("Unable to read the prob table from %s. Truncated file?", filename);
@@ -129,7 +130,7 @@ void load_ltr(const char *filename, struct ltrfile *ltr) {
 void build_ltr(const char *filename, struct ltrfile *ltr) {
     memset(ltr, 0, sizeof(*ltr));
     strncpy(ltr->header.magic, "LTR V1.0", 8);
-    ltr->header.num_letters = 28;
+    ltr->header.num_letters = MAX_LETTERS;
 
     char buf[256] = {0};
     char *p, *q;
@@ -141,7 +142,7 @@ void build_ltr(const char *filename, struct ltrfile *ltr) {
                 break;
             *q = tolower(*q);
             if (idx(*q) == -1) {
-                fprintf(stderr, "Invalid character %c in name %s. Skipping\n", *q, buf);
+                fprintf(stderr, "Invalid character %c (%02x) in name %s. Skipping\n", *q, *q, buf);
                 fflush(stderr);
                 continue;
             }
@@ -232,7 +233,7 @@ void print_ltr(struct ltrfile *ltr) {
 
     float s = 0.0, m = 0.0, e = 0.0;
     for (int i = 0; i < ltr->header.num_letters; i++) {
-        struct cdf28 *p = &ltr->data.singles;
+        struct cdf *p = &ltr->data.singles;
         printf("%c        |% .5f    % .5f  |% .5f     % .5f   |% .5f  % .5f\n", letters[i],
                 p->start[i],  p->start[i]  == 0.0 ? 0.0 : p->start[i]  - s,
                 p->middle[i], p->middle[i] == 0.0 ? 0.0 : p->middle[i] - m,
@@ -246,7 +247,7 @@ void print_ltr(struct ltrfile *ltr) {
     for (int i = 0; i < ltr->header.num_letters; i++) {
         s = m = e = 0.0;
         for (int j = 0; j < ltr->header.num_letters; j++) {
-            struct cdf28 *p = &ltr->data.doubles[i];
+            struct cdf *p = &ltr->data.doubles[i];
             printf("%c%c       |% .5f    % .5f  |% .5f     % .5f   |% .5f  % .5f\n", letters[i], letters[j],
                     p->start[j],  p->start[j]  == 0.0 ? 0.0 : p->start[j]  - s,
                     p->middle[j], p->middle[j] == 0.0 ? 0.0 : p->middle[j] - m,
@@ -262,7 +263,7 @@ void print_ltr(struct ltrfile *ltr) {
         for (int j = 0; j < ltr->header.num_letters; j++) {
             s = m = e = 0.0;
             for (int k = 0; k < ltr->header.num_letters; k++) {
-                struct cdf28 *p = &ltr->data.triples[i][j];
+                struct cdf *p = &ltr->data.triples[i][j];
                 printf("%c%c%c      |% .5f    % .5f  |% .5f     % .5f   |% .5f  % .5f\n", letters[i], letters[j], letters[k],
                         p->start[k],  p->start[k]  == 0.0 ? 0.0 : p->start[k]  - s,
                         p->middle[k], p->middle[k] == 0.0 ? 0.0 : p->middle[k] - m,
