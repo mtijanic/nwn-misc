@@ -80,22 +80,25 @@ void parse_cmdline(int argc, char *argv[]) {
 // NOTE: Game does not support more than 28 letters.
 // Files can have fewer (just alpha), but there is no point as the special ones
 // can just be given a probability of 0 to achieve the same effect.
-// Thus, 28 is hardcoded here, for ease of file IO.
-#define MAX_LETTERS 28
+// Thus, the value 28 is hardcoded here, for ease of file IO, but can be
+// overridden at compile time.
+#ifndef NUM_LETTERS
+#define NUM_LETTERS 28
+#endif
 static const char letters[] = "abcdefghijklmnopqrstuvwxyz'-";
 struct ltr_header {
     char     magic[8];
     uint8_t  num_letters;
 };
 struct cdf {
-    float start  [MAX_LETTERS];
-    float middle [MAX_LETTERS];
-    float end    [MAX_LETTERS];
+    float start  [NUM_LETTERS];
+    float middle [NUM_LETTERS];
+    float end    [NUM_LETTERS];
 };
 struct ltrdata {
     struct cdf singles;
-    struct cdf doubles[MAX_LETTERS];
-    struct cdf triples[MAX_LETTERS][MAX_LETTERS];
+    struct cdf doubles[NUM_LETTERS];
+    struct cdf triples[NUM_LETTERS][NUM_LETTERS];
 };
 struct ltrfile {
     struct ltr_header header;
@@ -118,8 +121,8 @@ void load_ltr(const char *filename, struct ltrfile *ltr) {
     if (fread(&ltr->header, 9, 1, f) != 1 || strncmp(ltr->header.magic, "LTR V1.0", 8))
         die("File %s has no valid LTR header", filename);
 
-    if (ltr->header.num_letters != MAX_LETTERS)
-        die("File built for %d letters, tool only supports %d.", ltr->header.num_letters, MAX_LETTERS);
+    if (ltr->header.num_letters != NUM_LETTERS)
+        die("File built for %d letters, tool only supports %d.", ltr->header.num_letters, NUM_LETTERS);
 
     if (fread(&ltr->data, sizeof(ltr->data), 1, f) != 1)
         die("Unable to read the prob table from %s. Truncated file?", filename);
@@ -130,7 +133,7 @@ void load_ltr(const char *filename, struct ltrfile *ltr) {
 void build_ltr(const char *filename, struct ltrfile *ltr) {
     memset(ltr, 0, sizeof(*ltr));
     strncpy(ltr->header.magic, "LTR V1.0", 8);
-    ltr->header.num_letters = MAX_LETTERS;
+    ltr->header.num_letters = NUM_LETTERS;
 
     char buf[256] = {0};
     char *p, *q;
