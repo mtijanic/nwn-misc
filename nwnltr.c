@@ -136,23 +136,31 @@ void build_ltr(const char *filename, struct ltrfile *ltr) {
     ltr->header.num_letters = NUM_LETTERS;
 
     char buf[256] = {0};
-    char *p, *q;
     int count = 0;
     int midcount = 0;
     while (scanf("%255s", buf) == 1) {
-        for (q = buf; *q; q++) {
-            if (((*q) == 0x0d) || ((*q) == 0x0a) || ((*q) == '#')) // stop on CR, LF, or #
+        char buf2[256] = {0};
+        char *p = buf2, *q = buf2;
+        for (char *r = buf; *r; r++) {
+            if ((*r) == '#') // stop on # to allow comments
                 break;
-            *q = tolower(*q);
-            if (idx(*q) == -1) {
-                fprintf(stderr, "Invalid character %c (%02x) in name %s. Skipping\n", *q, *q, buf);
+            *r = tolower(*r);
+            if (idx(*r) == -1) {
+                fprintf(stderr, "Invalid character %c (%02x) in name \"%s\". Skipping character.\n", *r, (uint8_t)*r, buf);
                 fflush(stderr);
                 continue;
             }
+            *q++ = *r;
         }
-        if ((q - buf) < 3) continue; // least 3 characters in name
+        *q = '\0';
 
-        p = buf; q--; count++;
+        if ((q - buf2) < 3) { // we need at least 3 characters in a name
+            fprintf(stderr, "Name \"%s\" is too short. Skipping name.\n", buf2);
+            fflush(stderr);
+            continue;
+        }
+
+        q--; count++;
 
         ltr->data.singles.start[idx(p[0])]                       += 1.0;
         ltr->data.doubles[idx(p[0])].start[idx(p[1])]            += 1.0;
