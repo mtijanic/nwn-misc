@@ -33,10 +33,10 @@ make -j6
 #
 # Make a directory to hold NWN data
 mkdir ~/nwn && cd ~/nwn
-# Fetch the NWN dedicated server package. The version here might be outdated, so replace 8193.3 with current NWN build version
+# Fetch the NWN dedicated server package. The version here might be outdated, so replace 8193.9 with current NWN build version
 wget https://nwnx.io/nwnee-dedicated-8193.9.zip
 # Unpack the server to current directory - ~/nwn
-unzip nwnee-dedicated-8193.3.zip -d .
+unzip nwnee-dedicated-8193.9.zip -d .
 
 # Run it once to create the user directory.
 # nwserver must be run with current directory the same as the executable, so we need to `cd` into it first
