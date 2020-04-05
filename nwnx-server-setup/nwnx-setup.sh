@@ -5,8 +5,6 @@
 #
 # Install necessary prereqs
 #
-# On 64bit systems, we need to manually add support for 32bit architecture
-sudo dpkg --add-architecture i386
 # We use a new compiler which may not be available by default, so add an extra place to download packages from
 sudo add-apt-repository ppa:ubuntu-toolchain-r/test
 # Redownload manifests for the newly added architecture and repository so we can use them
@@ -16,7 +14,7 @@ sudo apt upgrade
 # Install tools needed to build NWNX
 sudo apt install g++-7 g++-7-multilib gcc-7 gcc-7-multilib cmake git make
 # Install stuff needed to build/run/use MySQL
-sudo apt install mysql-server  libmysqlclient20:i386 libmysqlclient-dev:i386
+sudo apt install mysql-server  libmysqlclient20 libmysqlclient-dev
 
 #
 # Download and build NWNX
@@ -25,8 +23,8 @@ sudo apt install mysql-server  libmysqlclient20:i386 libmysqlclient-dev:i386
 git clone https://github.com/nwnxee/unified.git nwnx
 # Make a directory where the build system will initialize
 mkdir nwnx/build && cd nwnx/build
-# Initialize the build system to use GCC version 7, for 32bit. Build release version of nwnx, with debug info
-CC="gcc-7 -m32" CXX="g++-7 -m32" cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo ../
+# Initialize the build system to use GCC version 7. Build release version of nwnx, with debug info
+CC=gcc-7 CXX=g++-7 cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo ../
 # Build NWNX, in 6 threads. This will take a while
 make -j6
 
@@ -35,10 +33,10 @@ make -j6
 #
 # Make a directory to hold NWN data
 mkdir ~/nwn && cd ~/nwn
-# Fetch the NWN dedicated server package. The version here might be outdated, so replace 8186 with current NWN build version
-wget https://nwnx.io/nwnee-dedicated-8186.zip
+# Fetch the NWN dedicated server package. The version here might be outdated, so replace 8193.3 with current NWN build version
+wget https://nwnx.io/nwnee-dedicated-8193.9.zip
 # Unpack the server to current directory - ~/nwn
-unzip nwnee-dedicated-8186.zip -d .
+unzip nwnee-dedicated-8193.3.zip -d .
 
 # Run it once to create the user directory.
 # nwserver must be run with current directory the same as the executable, so we need to `cd` into it first
