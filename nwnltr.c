@@ -130,6 +130,77 @@ void load_ltr(const char *filename, struct ltrfile *ltr) {
     fclose(f);
 }
 
+void fix_ltr(struct ltrfile *ltr) {
+    // There was a bug in the original code Bioware used to create .ltr files
+    // which caused the (unused) single.middle and single.end tables to have
+    // their CDF values corrupted for all entries past any which have a
+    // probability of zero.
+    // Fortunately, this can always be corrected for in post, which we do here.
+
+    // If the final nonzero value in the table is not 'exactly' 1.0, then they
+    // are corrupt.
+    // Note that likely due to precision loss sometime during generation by
+    // Bioware's utility, the results, even after correction, may not exactly
+    // match 1.000000f, so we give a small bit of leeway.
+    int iscorrupt = 3;
+    for (int i = 0; i < ltr->header.num_letters; i++) {
+        if ((ltr->data.singles.middle[i] >= 0.9999) && (ltr->data.singles.middle[i] <= 1.0001)) {
+            iscorrupt -= 2; // the middle table is not corrupt
+        }
+        if ((ltr->data.singles.end[i] >= 0.9999) && (ltr->data.singles.end[i] <= 1.0001)) {
+            iscorrupt -= 1; // the end table is not corrupt
+        }
+    }
+    if (iscorrupt == 0) return; // nothing is corrupt, nothing to fix.
+    if (iscorrupt & 2) {
+        printf("Correcting errors in singles.middle probability table...\n");
+        float accumulator = 0.0;
+        float prevval = -1.0;
+        float correction = 0.0;
+        float uncorrected = 0.0;
+        for (int i = 0; i < ltr->header.num_letters; i++) {
+            uncorrected = ltr->data.singles.middle[i];
+            if (ltr->data.singles.middle[i] != 0.0) {
+                if (i > 0) {
+                    if ((prevval == 0.0)) {
+                        correction = accumulator;
+                    }
+                }
+                accumulator = ltr->data.singles.middle[i]+correction;
+                ltr->data.singles.middle[i] = accumulator;
+            }
+            printf("letter: %c, origvalue: %f, accumulator: %f, prevval: %f, correction: %f\n", letters[i], uncorrected, accumulator, prevval, correction);
+            prevval = uncorrected;
+        }
+        if ((accumulator < 0.9999) || (accumulator > 1.0001))
+            printf("Warning: during fixing process, accumulator ended up at an incorrect value of %f!\n", accumulator);
+    }
+    if (iscorrupt & 1) {
+        printf("Correcting errors in singles.end probability table...\n");
+        float accumulator = 0.0;
+        float prevval = -1.0;
+        float correction = 0.0;
+        float uncorrected = 0.0;
+        for (int i = 0; i < ltr->header.num_letters; i++) {
+            uncorrected = ltr->data.singles.end[i];
+            if (ltr->data.singles.end[i] != 0.0) {
+                if (i > 0) {
+                    if ((prevval == 0.0)) {
+                        correction = accumulator;
+                    }
+                }
+                accumulator = ltr->data.singles.end[i]+correction;
+                ltr->data.singles.end[i] = accumulator;
+            }
+            printf("letter: %c, origvalue: %f, accumulator: %f, prevval: %f, correction: %f\n", letters[i], uncorrected, accumulator, prevval, correction);
+            prevval = uncorrected;
+        }
+        if ((accumulator < 0.9999) || (accumulator > 1.0001))
+            printf("Warning: during fixing process, accumulator ended up at an incorrect value of %f!\n", accumulator);
+        printf("Corrections completed.\n");
+    }
+}
+
 void build_ltr(const char *filename, struct ltrfile *ltr) {
     memset(ltr, 0, sizeof(*ltr));
     strncpy(ltr->header.magic, "LTR V1.0", 8);
@@ -374,6 +445,9 @@ int main(int argc, char *argv[]) {
         build_ltr(cfg.ltrfile, &ltr);
     else
         load_ltr(cfg.ltrfile, &ltr);
+
+    if (!cfg.build)
+        fix_ltr(&ltr); // detect and fix the slightly corrupted data.singles.middle and data.singles.end table in certain original .ltr files
 
     if (cfg.print)
         print_ltr(&ltr);
