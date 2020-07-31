@@ -136,8 +136,6 @@ void build_ltr(const char *filename, struct ltrfile *ltr) {
     ltr->header.num_letters = NUM_LETTERS;
 
     char buf[256] = {0};
-    int count = 0;
-    int midcount = 0;
     while (scanf("%255s", buf) == 1) {
         char buf2[256] = {0};
         char *p = buf2, *q = buf2;
@@ -160,7 +158,7 @@ void build_ltr(const char *filename, struct ltrfile *ltr) {
             continue;
         }
 
-        q--; count++;
+        q--;
 
         ltr->data.singles.start[idx(p[0])]                       += 1.0;
         ltr->data.doubles[idx(p[0])].start[idx(p[1])]            += 1.0;
@@ -175,34 +173,47 @@ void build_ltr(const char *filename, struct ltrfile *ltr) {
             ltr->data.singles.middle[idx(p[0])]                       += 1.0;
             ltr->data.doubles[idx(p[0])].middle[idx(p[1])]            += 1.0;
             ltr->data.triples[idx(p[0])][idx(p[1])].middle[idx(p[2])] += 1.0;
-            midcount++;
         }
     }
 
-    float s = 0.0, m = 0.0, e = 0.0;
-    for (int i = 0; i < ltr->header.num_letters; i++) {
-        if (ltr->data.singles.start[i] > 0.0) {
-            ltr->data.singles.start[i] /= (float)count;
-            s = ltr->data.singles.start[i] += s;
+    {
+        float s = 0.0, m = 0.0, e = 0.0;
+        int startcount = 0, midcount = 0, endcount = 0;
+        for (int i = 0; i < ltr->header.num_letters; i++) {
+            startcount += (int)ltr->data.singles.start[i];
+            endcount += (int)ltr->data.singles.end[i];
+            midcount += (int)ltr->data.singles.middle[i];
         }
-        if (ltr->data.singles.end[i] > 0.0) {
-            ltr->data.singles.end[i] /= (float)count;
-            e = ltr->data.singles.end[i] += e;
-        }
-        if (ltr->data.singles.middle[i] > 0.0) {
-            ltr->data.singles.middle[i] /= (float)midcount;
-            m = ltr->data.singles.middle[i] += m;
+        for (int i = 0; i < ltr->header.num_letters; i++) {
+            if (ltr->data.singles.start[i] > 0.0) {
+                ltr->data.singles.start[i] /= (float)startcount;
+                s = ltr->data.singles.start[i] += s;
+            }
+            if (ltr->data.singles.end[i] > 0.0) {
+                ltr->data.singles.end[i] /= (float)endcount;
+                e = ltr->data.singles.end[i] += e;
+            }
+            if (ltr->data.singles.middle[i] > 0.0) {
+                ltr->data.singles.middle[i] /= (float)midcount;
+                m = ltr->data.singles.middle[i] += m;
+            }
         }
     }
-    s = m = e = 0.0;
     for (int i = 0; i < ltr->header.num_letters; i++) {
+        float s = 0.0, m = 0.0, e = 0.0;
+        int startcount = 0, midcount = 0, endcount = 0;
+        for (int j = 0; j < ltr->header.num_letters; j++) {
+            startcount += (int)ltr->data.doubles[i].start[j];
+            endcount += (int)ltr->data.doubles[i].end[j];
+            midcount += (int)ltr->data.doubles[i].middle[j];
+        }
         for (int j = 0; j < ltr->header.num_letters; j++) {
             if (ltr->data.doubles[i].start[j] > 0.0) {
-                ltr->data.doubles[i].start[j] /= (float)count;
+                ltr->data.doubles[i].start[j] /= (float)startcount;
                 s = ltr->data.doubles[i].start[j] += s;
             }
             if (ltr->data.doubles[i].end[j] > 0.0) {
-                ltr->data.doubles[i].end[j]    /= (float)count;
+                ltr->data.doubles[i].end[j] /= (float)endcount;
                 e = ltr->data.doubles[i].end[j] += e;
             }
             if (ltr->data.doubles[i].middle[j] > 0.0) {
@@ -211,16 +222,22 @@ void build_ltr(const char *filename, struct ltrfile *ltr) {
             }
         }
     }
-    s = m = e = 0.0;
     for (int i = 0; i < ltr->header.num_letters; i++) {
         for (int j = 0; j < ltr->header.num_letters; j++) {
+            float s = 0.0, m = 0.0, e = 0.0;
+            int startcount = 0, midcount = 0, endcount = 0;
+            for (int k = 0; k < ltr->header.num_letters; k++) {
+                startcount += (int)ltr->data.triples[i][j].start[k];
+                endcount += (int)ltr->data.triples[i][j].end[k];
+                midcount += (int)ltr->data.triples[i][j].middle[k];
+            }
             for (int k = 0; k < ltr->header.num_letters; k++) {
                 if (ltr->data.triples[i][j].start[k] > 0.0) {
-                    ltr->data.triples[i][j].start[k] /= (float)count;
+                    ltr->data.triples[i][j].start[k] /= (float)startcount;
                     s = ltr->data.triples[i][j].start[k] += s;
                 }
                 if (ltr->data.triples[i][j].end[k] > 0.0) {
-                    ltr->data.triples[i][j].end[k] /= (float)count;
+                    ltr->data.triples[i][j].end[k] /= (float)endcount;
                     e = ltr->data.triples[i][j].end[k] += e;
                 }
                 if (ltr->data.triples[i][j].middle[k] > 0.0) {
