@@ -155,7 +155,7 @@ void fix_ltr(struct ltrfile *ltr) {
         }
     }
     if (iscorrupt & 2) {
-        printf("Correcting errors in singles.middle probability table...\n");
+        fprintf(stderr,"Correcting errors in singles.middle probability table...\n");
         float accumulator = 0.0;
         float prevval = 0.0;
         float correction = 0.0;
@@ -171,14 +171,14 @@ void fix_ltr(struct ltrfile *ltr) {
                 accumulator = ltr->data.singles.middle[i]+correction;
                 ltr->data.singles.middle[i] = accumulator;
             }
-            printf("ltr: %c, original: %f, corrected: %f, acc: %f, offset: %f\n", letters[i], uncorrected, ltr->data.singles.middle[i], accumulator, correction);
+            fprintf(stderr,"ltr: %c, original: %f, corrected: %f, acc: %f, offset: %f\n", letters[i], uncorrected, ltr->data.singles.middle[i], accumulator, correction);
             prevval = uncorrected;
         }
         if ((accumulator < 0.9999) || (accumulator > 1.0001))
-            printf("Warning: during fixing process, accumulator ended up at an incorrect value of %f!\n", accumulator);
+            fprintf(stderr,"Warning: during fixing process, accumulator ended up at an incorrect value of %f!\n", accumulator);
     }
     if (iscorrupt & 1) {
-        printf("Correcting errors in singles.end probability table...\n");
+        fprintf(stderr,"Correcting errors in singles.end probability table...\n");
         float accumulator = 0.0;
         float prevval = 0.0;
         float correction = 0.0;
@@ -194,12 +194,15 @@ void fix_ltr(struct ltrfile *ltr) {
                 accumulator = ltr->data.singles.end[i]+correction;
                 ltr->data.singles.end[i] = accumulator;
             }
-            printf("ltr: %c, original: %f, corrected: %f, acc: %f, offset: %f\n", letters[i], uncorrected, ltr->data.singles.end[i], accumulator, correction);
+            fprintf(stderr,"ltr: %c, original: %f, corrected: %f, acc: %f, offset: %f\n", letters[i], uncorrected, ltr->data.singles.end[i], accumulator, correction);
             prevval = uncorrected;
         }
         if ((accumulator < 0.9999) || (accumulator > 1.0001))
-            printf("Warning: during fixing process, accumulator ended up at an incorrect value of %f!\n", accumulator);
-        printf("Corrections completed.\n");
+            fprintf(stderr,"Warning: during fixing process, accumulator ended up at an incorrect value of %f!\n", accumulator);
+    }
+    if (iscorrupt != 0) {
+        fprintf(stderr,"Corrections completed.\n");
+        fflush(stderr);
     }
 }
 
