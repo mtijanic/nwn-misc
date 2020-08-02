@@ -33,11 +33,13 @@
 " -p, --print         Print Markov chain tables for <LTRFILE> in a human readable format\n" \
 " -b, --build         Build Markov chain tables using words from stdin and store in <LTRFILE>\n" \
 " -g, --generate=NUM  Generate NUM names from <LTRFILE> and print to stdout. NUM=100 by default\n" \
-" -s, --seed=NUM      Set the RNG seed to NUM. time(NULL) by default\n"
+" -s, --seed=NUM      Set the RNG seed to NUM. time(NULL) by default\n" \
+" -n, --nofix         Do not fix corrupted tables in ltr files (if detected). default is to fix\n"
 
 struct cfg {
     int   build;
     int   print;
+    int   nofix;
     int   generate;
     int   seed;
     char *ltrfile;
@@ -59,6 +61,7 @@ void parse_cmdline(int argc, char *argv[]) {
     for (int i = 1; i < argc - 1; i++) {
         cfg.print |= !strcmp(argv[i], "-p") || !strcmp(argv[i], "--print");
         cfg.build |= !strcmp(argv[i], "-b") || !strcmp(argv[i], "--build");
+        cfg.nofix |= !strcmp(argv[i], "-n") || !strcmp(argv[i], "--nofix");
 
         sscanf(argv[i], "--seed=%d", &cfg.seed) || (!strcmp(argv[i], "-s") && sscanf(argv[i+1], "%d", &cfg.seed));
 
@@ -132,30 +135,29 @@ void load_ltr(const char *filename, struct ltrfile *ltr) {
 
 void fix_ltr(struct ltrfile *ltr) {
     // There was a bug in the original code Bioware used to create .ltr files
-    // which caused the (unused) single.middle and single.end tables to have
-    // their CDF values corrupted for all entries past any which have a
-    // probability of zero.
-    // Fortunately, this can always be corrected for in post, which we do here.
+    // which caused the single.middle and single.end tables to have their CDF
+    // values corrupted for all entries past any which have a probability of
+    // zero.
+    // Fortunately, this can be corrected for in post, which we do here.
 
     // If the final nonzero value in the table is not 'exactly' 1.0, then they
     // are corrupt.
     // Note that likely due to precision loss sometime during generation by
     // Bioware's utility, the results, even after correction, may not exactly
-    // match 1.000000f, so we give a small bit of leeway.
+    // accumulate to 1.000000f, so we give a small bit of leeway.
     int iscorrupt = 3;
     for (int i = 0; i < ltr->header.num_letters; i++) {
         if ((ltr->data.singles.middle[i] >= 0.9999) && (ltr->data.singles.middle[i] <= 1.0001)) {
-            iscorrupt -= 2; // the middle table is not corrupt
+            iscorrupt &= ~2; // the middle table is not corrupt
         }
         if ((ltr->data.singles.end[i] >= 0.9999) && (ltr->data.singles.end[i] <= 1.0001)) {
-            iscorrupt -= 1; // the end table is not corrupt
+            iscorrupt &= ~1; // the end table is not corrupt
         }
     }
-    if (iscorrupt == 0) return; // nothing is corrupt, nothing to fix.
     if (iscorrupt & 2) {
         printf("Correcting errors in singles.middle probability table...\n");
         float accumulator = 0.0;
-        float prevval = -1.0;
+        float prevval = 0.0;
         float correction = 0.0;
         float uncorrected = 0.0;
         for (int i = 0; i < ltr->header.num_letters; i++) {
@@ -169,7 +171,7 @@ void fix_ltr(struct ltrfile *ltr) {
                 accumulator = ltr->data.singles.middle[i]+correction;
                 ltr->data.singles.middle[i] = accumulator;
             }
-            printf("letter: %c, origvalue: %f, accumulator: %f, prevval: %f, correction: %f\n", letters[i], uncorrected, accumulator, prevval, correction);
+            printf("ltr: %c, original: %f, corrected: %f, acc: %f, offset: %f\n", letters[i], uncorrected, ltr->data.singles.middle[i], accumulator, correction);
             prevval = uncorrected;
         }
         if ((accumulator < 0.9999) || (accumulator > 1.0001))
@@ -178,7 +180,7 @@ void fix_ltr(struct ltrfile *ltr) {
     if (iscorrupt & 1) {
         printf("Correcting errors in singles.end probability table...\n");
         float accumulator = 0.0;
-        float prevval = -1.0;
+        float prevval = 0.0;
         float correction = 0.0;
         float uncorrected = 0.0;
         for (int i = 0; i < ltr->header.num_letters; i++) {
@@ -192,7 +194,7 @@ void fix_ltr(struct ltrfile *ltr) {
                 accumulator = ltr->data.singles.end[i]+correction;
                 ltr->data.singles.end[i] = accumulator;
             }
-            printf("letter: %c, origvalue: %f, accumulator: %f, prevval: %f, correction: %f\n", letters[i], uncorrected, accumulator, prevval, correction);
+            printf("ltr: %c, original: %f, corrected: %f, acc: %f, offset: %f\n", letters[i], uncorrected, ltr->data.singles.end[i], accumulator, correction);
             prevval = uncorrected;
         }
         if ((accumulator < 0.9999) || (accumulator > 1.0001))
@@ -446,8 +448,8 @@ int main(int argc, char *argv[]) {
     else
         load_ltr(cfg.ltrfile, &ltr);
 
-    if (!cfg.build)
-        fix_ltr(&ltr); // detect and fix the slightly corrupted data.singles.middle and data.singles.end table in certain original .ltr files
+    if (!(cfg.nofix))
+        fix_ltr(&ltr);
 
     if (cfg.print)
         print_ltr(&ltr);
