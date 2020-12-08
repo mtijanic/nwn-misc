@@ -415,9 +415,10 @@ again:
     *p++ = letters[i];
 
     while (1) {
+        prob = nrand();
         // Arbitrary end threshold form the core game
-        if ((rand() % 12) < (p - namebuf)) {
-            for (i = 0, prob = nrand(); i < ltr->header.num_letters; i++) {
+        if ((rand() % 12) <= (p - namebuf)) {
+            for (i = 0; i < ltr->header.num_letters; i++) {
                 if (prob < ltr->data.triples[idx(p[-2])][idx(p[-1])].end[i]) {
                     *p++ = letters[i]; *p = '\0';
                     namebuf[0] = toupper(namebuf[0]);
@@ -426,7 +427,7 @@ again:
             }
         }
 
-        for (i = 0, prob = nrand(); i < ltr->header.num_letters; i++) {
+        for (i = 0; i < ltr->header.num_letters; i++) {
             if (prob < ltr->data.triples[idx(p[-2])][idx(p[-1])].middle[i]) {
                 *p++ = letters[i];
                 break;
