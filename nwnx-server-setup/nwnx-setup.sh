@@ -12,7 +12,7 @@ sudo apt update
 # Upgrade any existing packages to the newest versions
 sudo apt upgrade
 # Install tools needed to build NWNX
-sudo apt install g++-7 g++-7-multilib gcc-7 gcc-7-multilib cmake git make
+sudo apt install g++-7 g++-7-multilib gcc-7 gcc-7-multilib cmake git make unzip
 # Install stuff needed to build/run/use MySQL
 sudo apt install mysql-server  libmysqlclient20 libmysqlclient-dev
 
